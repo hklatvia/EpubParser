@@ -6,46 +6,49 @@ import kotlin.concurrent.thread
 import java.util.concurrent.CyclicBarrier
 
 class BookManipulation(
-    private val cacheDirectory: File = File("C:\\Users\\aleks\\IdeaProjects\\untitled9\\cache"),
-    val filesDirectory: File
-) {
+    cacheDirectory: String,
+    filesDirectory: String,
+) : BookManipulationFunc {
+    private val cacheFile = File(cacheDirectory)
+    private val filesDirectoryFile = File(filesDirectory)
 
-
-    fun findEpub(filesDirectory: File): List<File> {
+    override fun findBook(filesDirectory: File): List<File> {
         var epubFiles = mutableListOf<File>()
         var files = filesDirectory.listFiles()
-        if (files != null) {
-            for (file in files) {
-                if (file.isDirectory) {
-                    epubFiles.addAll(findEpub(file))
-                } else if (file.extension == "epub") {
-                    epubFiles.add(file)
+        return if (files == null) {
+            epubFiles
+        } else {
+            files.forEach {
+                if (it.isDirectory) {
+                    epubFiles.addAll(findBook(it))
+                } else if (it.extension == Extentions.EPUB.type) {
+                    epubFiles.add(it)
                 }
             }
+            epubFiles
         }
-        return epubFiles
     }
 
-    fun getDataOfBook(file: File): Pair<String, Int> {
+    override fun getDataOfBook(file: File): Pair<String, Int> {
         val nameOfBook = file.name
         val parsedBook = EpubParse().parseBook(file)
         var uniqueWords = mutableSetOf<String>()
         val regex = Regex("\\b[A-Za-z]+\\b")
         val matches = regex.findAll(parsedBook)
-        for (match in matches) {
-            uniqueWords.add(match.value)
+        matches.forEach {
+            uniqueWords.add(it.value)
         }
 
-        return Pair(nameOfBook, uniqueWords.size)
+        return nameOfBook to uniqueWords.size
     }
 
-    fun cachingFiles() {
-        val epubFiles = findEpub(filesDirectory)
-        val fileReader = FileReader(cacheDirectory)
+    override fun cachingFiles() {
+        val epubFiles = findBook(filesDirectoryFile)
+        val fileReader = FileReader(cacheFile)
         val lines = fileReader.readLines()
         var namesThatContains = mutableListOf<String>()
-        for (file in epubFiles) {
-            for (line in lines) {
+        epubFiles.forEach { file ->
+            lines.forEach { line ->
                 if (line.contains(file.name)) {
                     namesThatContains.add(line)
                 }
@@ -57,13 +60,13 @@ class BookManipulation(
         val lock = ReentrantLock()
         val barrier = CyclicBarrier(epubFiles.size + 1)
         var remainingThreads = epubFiles.size
-        for (file in epubFiles) {
+        epubFiles.forEach { file ->
             if (!namesThatContains.any { it.contains(file.name) }) {
                 val thread = thread {
                     val content = getDataOfBook(file)
                     println("$content ${file.path}")
                     lock.lock()
-                    tempCache.add(content.toString() + " " + file.path)
+                    tempCache.add("${content.toString()} ${file.path}")
                     remainingThreads--
                     lock.unlock()
                     barrier.await()
@@ -78,7 +81,7 @@ class BookManipulation(
             barrier.await()
         }
 
-        val fileWriter = FileWriter(cacheDirectory, true)
+        val fileWriter = FileWriter(cacheFile, true)
         tempCache.forEach {
             fileWriter.write(it)
             fileWriter.write("\n")

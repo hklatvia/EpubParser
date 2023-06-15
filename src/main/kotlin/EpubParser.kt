@@ -3,29 +3,31 @@ import nl.siegmann.epublib.epub.EpubReader
 import org.jsoup.Jsoup
 import java.io.File
 import java.io.FileInputStream
-import java.lang.StringBuilder
 
-class EpubParse {
-    fun loadEpub(book: File): Book? {
+class EpubParse : ParseFunc {
+    override fun loadEpub(book: File): Book? {
         val epubFile = FileInputStream(book.path)
         return EpubReader().readEpub(epubFile)
     }
 
-    fun collectBookContent(book: Book): StringBuilder {
-        val plainText = StringBuilder()
-        for (resourse in book.contents) {
-            plainText.append(resourse.reader.readText())
+    override fun collectBookContent(book: Book): String {
+        return buildString {
+            book.contents.forEach {
+                append(it.reader.readText())
+            }
         }
-        return plainText
     }
-    fun parseBook(file: File): String {
-        var result = ""
+
+    override fun parseBook(file: File): String {
+        val result: String
         val book = loadEpub(file)
-        if (book != null) {
-            val bookReaded = collectBookContent(book).toString()
+        return if (book == null) {
+            "Empty book"
+        } else {
+            val bookReaded = collectBookContent(book)
             val bookParsed = Jsoup.parse(bookReaded)
             result = bookParsed.text()
+            result
         }
-        return result
     }
 }

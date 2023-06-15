@@ -1,13 +1,16 @@
-import java.io.File
 import kotlin.system.measureTimeMillis
 
-fun main(args: Array<String>) {
-    val hui = "C:/Users/aleks/IdeaProjects/untitled9/src/main"
+fun main() {
+    val hui = "C:/Users/aleks/IdeaProjects/untitled11/src/main"
     println("Enter your epub book's path: ")
-    val directoryOfFiles=File(readln())
-    val cacheFile = File("C:\\Users\\aleks\\IdeaProjects\\untitled8\\cache")
+    val directoryOfFiles = readln()
+    val cacheDirectory = "C:\\Users\\aleks\\IdeaProjects\\untitled11\\cache"
     val executionTime = measureTimeMillis {
-        BookManipulation(filesDirectory = directoryOfFiles).cachingFiles()//изменить логику передавать параметр в объект
+        BookManipulation(
+            cacheDirectory = cacheDirectory,
+            filesDirectory = directoryOfFiles,
+        ).cachingFiles()
     }
     println(executionTime)
 }
+
