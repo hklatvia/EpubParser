@@ -5,4 +5,4 @@ open interface BookManipulationFunc {
     fun getDataOfBook(file: File): Pair<String, Int>
     fun cachingFiles()
 
-}
+}пше
