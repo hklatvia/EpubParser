@@ -9,7 +9,7 @@ fun main() {
         BookManipulation(
             cacheDirectory = cacheDirectory,
             filesDirectory = directoryOfFiles,
-        ).cachingFiles()
+        ).cacheFiles()
     }
     println(executionTime)
 }

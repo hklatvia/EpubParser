@@ -8,6 +8,7 @@ class EpubParse : ParseFunc {
     override fun loadEpub(book: File): Book? {
         val epubFile = FileInputStream(book.path)
         return EpubReader().readEpub(epubFile)
+        epubFile.close()
     }
 
     override fun collectBookContent(book: Book): String {
