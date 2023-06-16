@@ -6,10 +6,9 @@ fun main() {
     val directoryOfFiles = readln()
     val cacheDirectory = "C:\\Users\\aleks\\IdeaProjects\\untitled11\\cache"
     val executionTime = measureTimeMillis {
-        BookManipulation(
+        EpubManipulation(
             cacheDirectory = cacheDirectory,
-            filesDirectory = directoryOfFiles,
-        ).cacheFiles()
+        ).cacheFiles(directoryOfFiles)
     }
     println(executionTime)
 }

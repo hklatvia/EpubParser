@@ -1,4 +1,4 @@
-enum class Extentions(val type: String) {
+enum class Extentions(val stringVal: String) {
     TXT("txt"),
     DOC("doc"),
     DOCX("docx"),
