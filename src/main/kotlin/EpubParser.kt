@@ -2,11 +2,13 @@ import nl.siegmann.epublib.domain.Book
 import nl.siegmann.epublib.epub.EpubReader
 import org.jsoup.Jsoup
 import java.io.FileInputStream
+import kotlin.system.measureTimeMillis
 
 class EpubParse : BookParser {
+    private val epubReader = EpubReader()
     private fun loadEpub(bookPath: String): Book? {
         val epubStream = FileInputStream(bookPath)
-        val result = EpubReader().readEpub(epubStream)
+        val result = epubReader.readEpub(epubStream)
         epubStream.close()
         return result
     }

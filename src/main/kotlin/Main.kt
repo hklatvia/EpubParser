@@ -5,11 +5,11 @@ fun main() {
     println("Enter your epub book's path: ")
     val directoryOfFiles = readln()
     val cacheDirectory = "C:\\Users\\aleks\\IdeaProjects\\untitled11\\cache"
-    val executionTime = measureTimeMillis {
+    val start = System.currentTimeMillis()
         EpubManipulation(
             cacheDirectory = cacheDirectory,
-        ).cacheFiles(directoryOfFiles)
-    }
-    println(executionTime)
+        ).printMetaBooksFromDirectory(directoryOfFiles)
+    val end = System.currentTimeMillis()
+    println(end - start)
 }
 
