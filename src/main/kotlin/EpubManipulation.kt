@@ -1,8 +1,11 @@
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.concurrent.thread
-import java.util.concurrent.CyclicBarrier
+
 
 class EpubManipulation(
     cacheDirectory: String,
@@ -69,24 +72,18 @@ class EpubManipulation(
     private fun cachingFilesMetadata(filesDirectory: String) {
         val epubFiles = findBooksInDirectory(filesDirectory)
         val tempCache = mutableListOf<String>()
-        val barrier = CyclicBarrier(epubFiles.size + 1)
-        var remainingThreads = epubFiles.size
         val namesThatContains = loadCache(epubFiles)
+        val executorService = Executors.newCachedThreadPool()
         epubFiles.forEach { file ->
             if (!namesThatContains.any { it.contains(file.name) }) {
-                thread {
+                val future = executorService.submit(Runnable {
                     val content = getDataOfBook(file.path)
-                    synchronized(tempCache) {
-                        tempCache.add("$content ${file.path}")
-                    }
-                    remainingThreads--
-                    barrier.await()
-                }
-            } else remainingThreads--
+                    tempCache.add("$content ${file.path}")
+                })
+                future.get()
+            }
         }
-        while (remainingThreads > 0) {
-            barrier.await()
-        }
+        executorService.shutdown()
         writeCache(tempCache)
     }
 
