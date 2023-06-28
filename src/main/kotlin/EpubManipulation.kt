@@ -3,21 +3,26 @@ import java.io.FileReader
 import java.io.FileWriter
 import kotlin.concurrent.thread
 import java.util.concurrent.CyclicBarrier
-import kotlin.system.measureTimeMillis
 
 class EpubManipulation(
     cacheDirectory: String,
 ) : BookManipulation {
     private val cacheFile = File(cacheDirectory)
-    private val epubParse = EpubParse()
-    private val fileWriterCache = FileWriter(cacheFile, true)
-    private val fileReaderCache = FileReader(cacheFile)
+    private val epubParser = EpubParser()
+    private val fileCacheWriter = FileWriter(cacheFile, true)
+    private val fileCacheReader = FileReader(cacheFile)
 
-    companion object {
-        val regex = Regex("\\b[A-Za-z]+\\b")
+    override fun printMetaBooksFromDirectory(directoryName: String): List<String> {
+        cachingFilesMetadata(directoryName)
+        val result = FileReader(cacheFile).readLines()
+        result.forEach() {
+            println(it)
+        }
+        FileReader(cacheFile).close()
+        return result
     }
 
-    private fun findBook(filesDirectory: String): List<File> {
+    private fun findBooksInDirectory(filesDirectory: String): List<File> {
         val epubFiles = mutableListOf<File>()
         val files = File(filesDirectory).listFiles()
         return if (files == null) {
@@ -25,8 +30,8 @@ class EpubManipulation(
         } else {
             files.forEach {
                 if (it.isDirectory) {
-                    epubFiles.addAll(findBook(it.path))
-                } else if (it.extension == Extentions.EPUB.stringVal) {
+                    epubFiles.addAll(findBooksInDirectory(it.path))
+                } else if (it.extension == FileExtensions.EPUB.stringVal) {
                     epubFiles.add(it)
                 }
             }
@@ -35,7 +40,7 @@ class EpubManipulation(
     }
 
     private fun getDataOfBook(filePath: String): Pair<String, Int> {
-        val parsedBook = epubParse.parseContent(filePath)
+        val parsedBook = epubParser.parseContent(filePath)
         val uniqueWords = regex.findAll(parsedBook)
             .map { it.value }
             .toSet()
@@ -43,8 +48,8 @@ class EpubManipulation(
         return file.name to uniqueWords.size
     }
 
-    private fun checkCache(epubFiles: List<File>): List<String> {
-        val lines = fileReaderCache.readLines()
+    private fun loadCache(epubFiles: List<File>): List<String> {
+        val lines = fileCacheReader.readLines()
         val result = epubFiles.flatMap { file ->
             lines.filter { line ->
                 line.contains(file.name)
@@ -56,17 +61,17 @@ class EpubManipulation(
     private fun writeCache(tempCache: List<String>) {
         if (tempCache.isEmpty()) return
         tempCache.forEach {
-            fileWriterCache.write("$it\n")
+            fileCacheWriter.write("$it\n")
         }
-        fileWriterCache.close()
+        fileCacheWriter.close()
     }
 
-    private fun cacheFiles(filesDirectory: String) {
-        val epubFiles = findBook(filesDirectory)
+    private fun cachingFilesMetadata(filesDirectory: String) {
+        val epubFiles = findBooksInDirectory(filesDirectory)
         val tempCache = mutableListOf<String>()
         val barrier = CyclicBarrier(epubFiles.size + 1)
         var remainingThreads = epubFiles.size
-        val namesThatContains = checkCache(epubFiles)
+        val namesThatContains = loadCache(epubFiles)
         epubFiles.forEach { file ->
             if (!namesThatContains.any { it.contains(file.name) }) {
                 thread {
@@ -85,13 +90,7 @@ class EpubManipulation(
         writeCache(tempCache)
     }
 
-    override fun printMetaBooksFromDirectory(directoryName: String): List<String> {
-        cacheFiles(directoryName)
-        val result = FileReader(cacheFile).readLines()
-        result.forEach() {
-            println(it)
-        }
-        FileReader(cacheFile).close()
-        return result
+    companion object {
+        val regex = Regex("\\b[A-Za-z]+\\b")
     }
 }
