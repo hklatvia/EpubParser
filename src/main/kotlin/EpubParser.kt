@@ -6,6 +6,15 @@ import java.io.FileInputStream
 class EpubParser : BookParser {
     private val epubReader = EpubReader()
 
+    fun parseAuthorFromEPUB(filePath: String): String? {
+        val book = FileInputStream(filePath).use { fileInputStream ->
+            epubReader.readEpub(fileInputStream)
+        }
+
+        val metadata = book.metadata
+        return metadata?.authors?.firstOrNull()?.toString()
+    }
+
     override fun parseContent(file: String): String {
         val book = loadEpub(file)
         return if (book == null) {

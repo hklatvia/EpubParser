@@ -4,4 +4,5 @@ enum class FileExtensions(val stringVal: String) {
     DOCX("docx"),
     EPUB("epub"),
     RTF("rtf"),
+    FB2("fb2"),
 }

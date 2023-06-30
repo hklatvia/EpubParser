@@ -1,14 +1,14 @@
+import com.google.gson.GsonBuilder
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.util.concurrent.Executors
-import com.google.gson.GsonBuilder
 
-class EpubManipulation(
+class TxtManipulation(
     cacheDirectory: String,
 ) : BookManipulation {
+    private val txtParser = TxtParser()
     private val cacheFile = File(cacheDirectory)
-    private val epubParser = EpubParser()
     private val fileCacheWriter = FileWriter(cacheFile, true)
     private val fileCacheReader = FileReader(cacheFile)
     val gson = GsonBuilder()
@@ -24,38 +24,37 @@ class EpubManipulation(
     }
 
     private fun findBooksInDirectory(filesDirectory: String): List<File> {
-        val epubFiles = mutableListOf<File>()
+        val txtFiles = mutableListOf<File>()
         val files = File(filesDirectory).listFiles()
         return if (files == null) {
-            epubFiles
+            txtFiles
         } else {
             files.forEach { file ->
                 if (file.isDirectory) {
-                    epubFiles.addAll(findBooksInDirectory(file.path))
+                    txtFiles.addAll(findBooksInDirectory(file.path))
                 } else {
                     when (file.extension) {
-                        FileExtensions.EPUB.stringVal -> epubFiles.add(file)
+                        FileExtensions.TXT.stringVal -> txtFiles.add(file)
                     }
                 }
             }
-            epubFiles
+            txtFiles
         }
     }
 
     private fun getDataOfBook(filePath: String): BookData {
-        val parsedBook = epubParser.parseContent(filePath)
+        val parsedBook = txtParser.parseContent(filePath)
         val uniqueWords = regex.findAll(parsedBook)
             .map { it.value }
             .toSet()
         val file = File(filePath)
-        val author = epubParser.parseAuthorFromEPUB(filePath) ?: ""
         val title = file.nameWithoutExtension
-        return BookData(author, title, uniqueWords.size, filePath)
+        return BookData("There is not author txt files", title, uniqueWords.size, filePath)
     }
 
-    private fun loadCache(epubFiles: List<File>): List<String> {
+    private fun loadCache(txtFiles: List<File>): List<String> {
         val lines = fileCacheReader.readLines()
-        val result = epubFiles.flatMap { file ->
+        val result = txtFiles.flatMap { file ->
             lines.filter { line ->
                 line.contains(file.name)
             }
@@ -72,11 +71,11 @@ class EpubManipulation(
     }
 
     private fun storeBookMetadata(filesDirectory: String) {
-        val epubFiles = findBooksInDirectory(filesDirectory)
+        val txtFiles = findBooksInDirectory(filesDirectory)
         val tempCache = mutableListOf<BookData>()
-        val namesThatContains = loadCache(epubFiles)
-        val executorService = Executors.newFixedThreadPool(epubFiles.size + 1)
-        epubFiles.forEach { file ->
+        val namesThatContains = loadCache(txtFiles)
+        val executorService = Executors.newFixedThreadPool(txtFiles.size + 1)
+        txtFiles.forEach { file ->
             if (!namesThatContains.any { it.contains(file.name) }) {
                 val future = executorService.submit(Runnable {
                     val content = getDataOfBook(file.path)
