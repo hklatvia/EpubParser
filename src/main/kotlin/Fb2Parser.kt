@@ -1,7 +1,9 @@
+import com.google.gson.GsonBuilder
 import java.io.File
+import java.io.FileReader
 import javax.xml.parsers.DocumentBuilderFactory
 
-class Fb2Parser: BookParser {
+class Fb2Parser : BookParser {
 
     fun parseAuthorFromFb2(file: String): String {
         val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
@@ -18,7 +20,9 @@ class Fb2Parser: BookParser {
 
     override fun parseContent(path: String): String {
         val fb2File = File(path)
-        val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+        val documentBuilder = DocumentBuilderFactory
+            .newInstance()
+            .newDocumentBuilder()
         val document = documentBuilder.parse(fb2File)
         return parseNode(document.documentElement)
     }

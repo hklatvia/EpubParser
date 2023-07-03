@@ -1,5 +1,5 @@
 import java.io.File
 
 interface BookManipulation {
-    fun printMetaBooksFromDirectory(directoryName: String): List<String>
+    fun getDataOfBook(filePath: String): BookData
 }

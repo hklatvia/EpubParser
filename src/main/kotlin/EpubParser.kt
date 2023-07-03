@@ -1,7 +1,9 @@
+import com.google.gson.GsonBuilder
 import nl.siegmann.epublib.domain.Book
 import nl.siegmann.epublib.epub.EpubReader
 import org.jsoup.Jsoup
 import java.io.FileInputStream
+import java.io.FileReader
 
 class EpubParser : BookParser {
     private val epubReader = EpubReader()
