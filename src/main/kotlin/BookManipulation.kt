@@ -1,3 +1,3 @@
 interface BookManipulation {
-    fun getDataOfBook(filePath: String): List<BookData>
+    fun printMetaBooksFromDirectory(directoryName: String)
 }
