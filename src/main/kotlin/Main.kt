@@ -1,7 +1,11 @@
-fun main(args: Array<String>) {
-    println("Hello World!")
-
-    // Try adding program arguments via Run/Debug configuration.
-    // Learn more about running applications: https://www.jetbrains.com/help/idea/running-applications.html.
-    println("Program arguments: ${args.joinToString()}")
+fun main() {
+    val hui = "C:/Users/aleks/IdeaProjects/epubepub/src/main"
+    println("Enter your epub book's path: ")
+    val directoryOfFiles = readln()
+    val cacheDirectory = "C:\\Users\\aleks\\IdeaProjects\\epubepub\\cache"
+    val start = System.currentTimeMillis()
+    BookManipulationImpl(cacheDirectory).printMetaBooksFromDirectory(hui)
+    val end = System.currentTimeMillis()
+    println(end - start)
 }
+
