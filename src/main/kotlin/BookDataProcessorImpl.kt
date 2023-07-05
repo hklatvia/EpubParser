@@ -2,19 +2,10 @@ import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class BookDataProcessorImpl(private val bookManipulation: BookManipulationImpl): BookDataProcessor {
-    private val bookFinder = BooksFinderImpl()
-    private val epubParser = EpubParser()
-    private val txtParser = TxtParser()
-    private val fb2Parser = Fb2Parser()
-    private val cacheManager = CacheManagerImpl(bookManipulation)
-
-    override fun storeBookMetadata(filesDirectory: String) {
-        val listOfBooks = collectListOfBooks(filesDirectory)
-        val namesThatContains = cacheManager.loadCache(listOfBooks)
-        val tempCache = collectNewBooksMetadata(listOfBooks, namesThatContains)
-        cacheManager.writeCache(tempCache)
-    }
+class BookDataProcessorImpl(private val bookManipulation: BookManipulationImpl) : BookDataProcessor {
+    private val epubParser = bookManipulation.epubParser
+    private val txtParser = bookManipulation.txtParser
+    private val fb2Parser = bookManipulation.fb2Parser
 
     override fun collectNewBooksMetadata(listOfBooks: List<File>, namesThatContains: List<String>): List<BookData> {
         val tempCache = mutableListOf<BookData>()
@@ -34,15 +25,6 @@ class BookDataProcessorImpl(private val bookManipulation: BookManipulationImpl):
             executorService.awaitTermination(0, TimeUnit.SECONDS)
         }
         return tempCache
-    }
-
-    private fun collectListOfBooks(filesDirectory: String): List<File> {
-        val booksInStorage = bookFinder.findBooksInDirectory(filesDirectory)
-        val listOfBooks = mutableListOf<File>()
-        listOfBooks.addAll(booksInStorage.epubFiles)
-        listOfBooks.addAll(booksInStorage.txtFiles)
-        listOfBooks.addAll(booksInStorage.fb2Files)
-        return listOfBooks
     }
 
     private fun getDataOfBooks(filePath: String): List<BookData> {
