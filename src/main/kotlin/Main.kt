@@ -4,7 +4,7 @@ fun main() {
     val directoryOfFiles = readln()
     val cacheDirectory = "C:\\Users\\aleks\\IdeaProjects\\epubepub\\cache"
     val start = System.currentTimeMillis()
-    FilePrinter().printMetaBooksFromDirectory(hui)
+    BookManipulationImpl(cacheDirectory).printMetaBooksFromDirectory(hui)
     val end = System.currentTimeMillis()
     println(end - start)
 }

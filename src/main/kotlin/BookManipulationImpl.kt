@@ -1,43 +1,51 @@
+import com.google.gson.GsonBuilder
 import java.io.File
 import java.io.FileReader
-import java.io.FileWriter
-import java.util.concurrent.Executors
-import com.google.gson.GsonBuilder
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.ReentrantLock
 
-abstract class BookManipulationImpl() : BookManipulation {
-
+class BookManipulationImpl(
+   val cacheDirectory: String
+) : BookManipulation {
+    private val cacheManager = CacheManagerImpl(this)
     private val epubParser = EpubParser()
     private val txtParser = TxtParser()
     private val fb2Parser = Fb2Parser()
-
-    val gson = GsonBuilder()
+    private val cacheFile = File(cacheDirectory)
+    private val gson = GsonBuilder()
         .setPrettyPrinting()
         .serializeNulls()
         .create()
 
-    fun findBooksInDirectory(filesDirectory: String): Triple<List<File>, List<File>, List<File>> {
+    fun printMetaBooksFromDirectory(directoryName: String): List<BookData> {
+        cacheManager.storeBookMetadata(directoryName)
+        val result = FileReader(cacheFile).use { reader ->
+            gson.fromJson(reader, BookList::class.java).books
+        }
+        result.forEach { println(it) }
+        return result
+    }
+
+    fun findBooksInDirectory(filesDirectory: String): BookStorage {
         val epubFiles = mutableListOf<File>()
         val txtFiles = mutableListOf<File>()
         val fb2Files = mutableListOf<File>()
         val files = File(filesDirectory).listFiles()
         return if (files == null) {
-            Triple(epubFiles, txtFiles, fb2Files)
+            return BookStorage(epubFiles, txtFiles, fb2Files)
         } else {
             files.forEach { file ->
                 if (file.isDirectory) {
-                    epubFiles.addAll(findBooksInDirectory(file.path).first
+                    epubFiles.addAll(findBooksInDirectory(file.path).epubFiles
                         .filter {
                             it.extension == FileExtensions.EPUB.stringVal
                         })
-                    txtFiles.addAll(findBooksInDirectory(file.path).second
+                    txtFiles.addAll(findBooksInDirectory(file.path).txtFiles
                         .filter {
                             it.extension == FileExtensions.TXT.stringVal
                         })
-                    fb2Files.addAll(findBooksInDirectory(file.path).third.filter {
-                        it.extension == FileExtensions.FB2.stringVal
-                    })
+                    fb2Files.addAll(findBooksInDirectory(file.path).fb2Files
+                        .filter {
+                            it.extension == FileExtensions.FB2.stringVal
+                        })
                 } else {
                     when (file.extension) {
                         FileExtensions.EPUB.stringVal -> epubFiles.add(file)
@@ -46,11 +54,11 @@ abstract class BookManipulationImpl() : BookManipulation {
                     }
                 }
             }
-            Triple(epubFiles, txtFiles, fb2Files)
+            return BookStorage(epubFiles, txtFiles, fb2Files)
         }
     }
 
-    override fun getDataOfBook(filePath: String): BookData {
+    override fun getDataOfBook(filePath: String): List<BookData> {
         val file = File(filePath)
         val fileExtension = file.extension
         val parsedBook = when (fileExtension) {
@@ -63,19 +71,25 @@ abstract class BookManipulationImpl() : BookManipulation {
             .map { it.value }
             .toSet()
         val title = file.nameWithoutExtension
+
+        val bookDataList = mutableListOf<BookData>()
+
         return when (fileExtension) {
             FileExtensions.EPUB.stringVal -> {
                 val author = epubParser.parseAuthorFromEPUB(filePath) ?: ""
-                BookData(author, title, uniqueWords.size, filePath)
+                bookDataList.add(BookData(author, title, uniqueWords.size, filePath))
+                bookDataList
             }
 
             FileExtensions.TXT.stringVal -> {
-                BookData("There is not author txt files", title, uniqueWords.size, filePath)
+                bookDataList.add(BookData("There is no author for txt files", title, uniqueWords.size, filePath))
+                bookDataList
             }
 
             FileExtensions.FB2.stringVal -> {
                 val author = fb2Parser.parseAuthorFromFb2(filePath)
-                BookData(author, title, uniqueWords.size, filePath)
+                bookDataList.add(BookData(author, title, uniqueWords.size, filePath))
+                bookDataList
             }
 
             else -> throw IllegalArgumentException("Unsupported file format: $fileExtension")
